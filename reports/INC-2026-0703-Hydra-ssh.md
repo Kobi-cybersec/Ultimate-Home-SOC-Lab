@@ -1,0 +1,52 @@
+# 🛡️ Incident Response Report: Unauthorized SSH Brute-Force Activity
+**Incident Identifier:** INC-2026-0703  
+**Severity:** High (Priority 2)  
+**Status:** Closed / Mitigated  
+
+---
+
+## 🏢 1. Executive Summary
+On July 3, 2026, at approximately 17:33:32, the enterprise SIEM (Wazuh) detected a high-volume, automated SSH brute-force attack targeting internal host **`linux-target-01` (192.168.5.15)**. The malicious traffic originated from internal asset **192.168.5.17** utilizing the open-source network logon cracker Hydra. 
+
+The attacker attempted rapid, successive authentication requests using unauthorized accounts, notably targeting the credential artifact `super_hacker`. The attack failed to compromise any system accounts, and 0 successful authentications were recorded. The target host remains fully operational, and defense-in-depth remediation has been scheduled.
+
+---
+
+## 📅 2. Timeline of Events
+All timestamps are logged in local system time (EST).
+
+*   **2026-07-03 17:30:00** - System baseline operating normally. No anomalous SSH traffic detected.
+*   **2026-07-03 17:33:32** - **Incident Start.** Wazuh SIEM triggers high-severity alerts for multiple SSH authentication failures.
+*   **2026-07-03 17:33:45** - SIEM logs a total volume of 36 rapid, consecutive failed attempts targeting unauthorized usernames.
+*   **2026-07-03 17:34:00** - **Incident End.** Inbound malicious SSH traffic from source IP `192.168.5.17` ceases. 
+
+---
+
+## 📊 3. Technical Analysis & Forensic Evidence
+The security team conducted forensic triage using the telemetry collected by the Wazuh agent. 
+
+### Indicators of Compromise (IoCs)
+| Attribute | Artifact Value | Security Context |
+| :--- | :--- | :--- |
+| **Source IP** | `192.168.5.17` | Attacking host network address |
+| **Destination Host** | `192.168.5.15` | Target Ubuntu Server (`linux-target-01`) |
+| **Target Service** | SSH (Port 22) | Target vector for remote command execution |
+| **Alert Volume** | 36 Failed Hits | Pattern indicates automation (Hydra execution) |
+| **Target Usernames** | `super_hacker` | Non-existent credential artifact used in wordlist |
+| **Final Disposition**| **Blocked** | Authentication failed across all attempts |
+
+### Telemetry Screenshots
+*(Note: To display your actual screenshots here, ensure they are inside your repository's images folder and reference them like this: `../images/wazuh_spike_1.png`)*
+
+---
+
+## 🛡️ 4. Containment, Eradication, & Lessons Learned
+
+### Immediate Actions Taken
+*   **Session Verification:** Executed `who` and `last` commands on `linux-target-01` to guarantee no rogue sessions bypassed detection. Confirmed system integrity.
+*   **Network Isolation:** Source IP `192.168.5.17` was isolated from the local subnet to disrupt the attack loop.
+
+### Long-Term Hardening Recommendations (Defense-in-Depth)
+1.  **Enforce Key-Based Authentication:** Modify `/etc/ssh/sshd_config` to disable password authentication (`PasswordAuthentication no`). This renders automated wordlist attacks useless.
+2.  **Deploy Fail2Ban:** Implement a local jail policy to automatically drop firewall traffic from any host generating more than 5 failed connection attempts within a 10-minute window.
+3.  **Wazuh Log Monitoring Expansion:** Configure the Wazuh manager to actively ingest and parse `/var/log/fail2ban.log` to alert on automated banning events.
