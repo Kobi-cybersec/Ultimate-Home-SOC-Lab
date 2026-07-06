@@ -59,7 +59,13 @@ Drilling down into the raw log data fields (`data.srcuser` and `srcip`), the SIE
 
 ---
 
+## 📁 Documented Incident Reports
+To match enterprise compliance standards, all verified threat simulations are operationalized into formal security documentation:
+*   [INC-2026-0703: SSH Brute-Force Attack (Hydra Detection vs. Wazuh SIEM)](./reports/INC-2026-0703-Hydra-SSH.md) — *Status: Closed/Mitigated*
+
+---
+
 ## 🚀 Next Horizons
-* [ ] Build out automated documentation templates for standardized incident response reports.
+* [x] Build out automated documentation templates for standardized incident response reports.
 * [ ] Expand the architecture to include a Windows Server VM.
 * [ ] Provision Active Directory (AD) to simulate enterprise identity management and monitor domain-level threat vectors.
