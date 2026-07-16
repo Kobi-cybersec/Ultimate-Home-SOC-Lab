@@ -59,6 +59,42 @@ Drilling down into the raw log data fields (`data.srcuser` and `srcip`), the SIE
 
 ---
 
+## 🗄️ Phase 5: Windows Domain Controller & Active Directory Integration
+* **Asset Name:** `windows-dc-01` (Agent `002`)
+* **Operating System:** Windows Server 2022
+* **Resource Mapping:** 2 vCPU cores, 4GB RAM, 50GB NVMe Virtual Disk.
+* **Role:** Active Directory Domain Services (AD DS) configured as the primary Domain Controller.
+* **Telemetry Engine:** Wazuh Windows Agent + Microsoft Sysmon (System Monitor) with a customized configuration to capture rich endpoint and process creation telemetry.
+
+---
+
+## 🔍 Phase 6: Advanced Telemetry Engineering & Active Directory Recon Detection
+With Windows telemetry reporting back to the Wazuh Manager, we simulated common enterprise attack vectors, evaluated system encoding mechanics, and engineered custom detection rules to capture stealth behaviors.
+
+### 🧠 Key Engineering Hurdles Overcome:
+* **Custom Sysmon Telemetry Ingestion:** Developed custom Wazuh rule `100002` to parse Sysmon Event ID 1 (Process Creation) logs, specifically targeting execution anomalies like `nslookup.exe` using precise regex anchors (`^1$`).
+* **UTF-8 vs. UTF-16LE Encoding Anomalies:** Evaluated PowerShell execution mechanics under `-EncodedCommand`. Investigated how execution obfuscation conceals the malicious payload in standard logs and verified Sysmon's ability to pull down the raw, obfuscated Base64 attack string under native Wazuh Rule `92057`.
+
+### 📸 Windows Telemetry & Simulation Evidence:
+
+#### 1. Custom Rule Engineering
+Injecting a custom rule into the local rules manager to bridge Sysmon Event ID 1 process telemetry with Wazuh's detection engine.
+* **Local Rules Configuration (`local_rules.xml`):** ![Wazuh Local Rules XML](./images/wazuh-custom-rules-xml.png)
+* **Custom Nslookup Rule Triggered:** ![Wazuh Nslookup Alert](./images/wazuh-nslookup-alert.png)
+
+#### 2. Encoded PowerShell Payload Detection
+Running a Base64-encoded command string, verifying Wazuh Rule `92057` caught the execution natively, and analyzing Sysmon's capture of the raw metadata.
+* **Rule 92057 Alert Stream:** ![Wazuh PowerShell Alert](./images/wazuh-powershell-encoded-alert.png)
+* **PowerShell Metadata Breakdown:** ![Wazuh PowerShell Details](./images/wazuh-powershell-encoded-details.png)
+
+#### 3. Active Directory Reconnaissance & MITRE ATT&CK Mapping
+Simulated internal account discovery using the `net user /domain` command on the Domain Controller. Discovered Windows process tree behavior (`net.exe` spawning `net1.exe` under the hood) and analyzed the automatic MITRE ATT&CK T1087 (Account Discovery) mapping inside the Wazuh console.
+* **Net.exe Execution Alert:** ![Wazuh Recon Net Alert](./images/wazuh-recon-net-alert.png)
+* **Expanded Process Tree Details (net1.exe spawn):** ![Wazuh Recon Net Details](./images/wazuh-recon-net-details.png)
+* **MITRE ATT&CK T1087 (Account Discovery) Mapping:** ![Wazuh Recon MITRE Mapping](./images/wazuh-recon-net-mitre.png)
+
+---
+
 ## 📁 Documented Incident Reports
 To match enterprise compliance standards, all verified threat simulations are operationalized into formal security documentation:
 *   [INC-2026-0703: SSH Brute-Force Attack (Hydra Detection vs. Wazuh SIEM)](./reports/INC-2026-0703-Hydra-SSH.md) — *Status: Closed/Mitigated*
@@ -67,5 +103,7 @@ To match enterprise compliance standards, all verified threat simulations are op
 
 ## 🚀 Next Horizons
 * [x] Build out automated documentation templates for standardized incident response reports.
-* [ ] Expand the architecture to include a Windows Server VM.
-* [ ] Provision Active Directory (AD) to simulate enterprise identity management and monitor domain-level threat vectors.
+* [x] Expand the architecture to include a Windows Server VM.
+* [x] Provision Active Directory (AD) to simulate enterprise identity management and monitor domain-level threat vectors.
+* [ ] Integrate pfSense as a virtual network-level boundary security device.
+* [ ] Deploy a central Syslog collector to aggregate network-level firewall logs into the Wazuh SIEM.
