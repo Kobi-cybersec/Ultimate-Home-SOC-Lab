@@ -1,0 +1,11 @@
+# OS-specific clutter
+.DS_Store
+Thumbs.db
+
+# Log files and database locks
+*.log
+*.tmp
+
+# IDE / Code Editor configurations
+.vscode/
+.idea/

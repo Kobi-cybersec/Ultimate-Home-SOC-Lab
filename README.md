@@ -1,6 +1,31 @@
 # 🛡️ Enterprise Home SOC Lab Journey
 
-Welcome to my cybersecurity portfolio. This repository documents the step-by-step engineering, deployment, and real-time monitoring of an isolated Home Security Operations Center (SOC) lab environment built from the ground up using enterprise-grade open-source tooling.
+[![Wazuh](https://img.shields.io/badge/SIEM-Wazuh-blue.svg)](https://wazuh.com/)
+[![Hypervisor](https://img.shields.io/badge/Hypervisor-Proxmox%20VE-orange.svg)](https://www.proxmox.com)
+[![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Windows%20Server-lightgrey.svg)]()
+
+This repository documents the step-by-step engineering, deployment, and real-time monitoring of an isolated, enterprise-grade Security Operations Center (SOC) lab environment. Built entirely from the ground up on physical hardware, this environment serves as a practical sandbox for host-level telemetry engineering, custom threat detection rule development, Active Directory reconnaissance analysis, and structured incident response.
+
+### 🧠 Key Skills & Technologies Demonstrated:
+* **SIEM & Logging:** Wazuh Manager, custom Sysmon XML profiles, Elasticsearch/OpenSearch index management.
+* **Systems & Security Engineering:** Proxmox VE hypervisor management, Linux LVM manipulation, Active Directory Domain Services (AD DS).
+* **Detection Engineering:** Regex-based XML rule development (Sysmon Event ID tracking), PowerShell obfuscation analysis.
+* **Threat Simulation & Incident Response:** Active reconnaissance analysis (MITRE ATT&CK T1087 mapping), Hydra brute-force analytics, and industry-compliant forensic reporting.
+
+---
+
+## 📋 Lab Specifications & Topology
+Before diving into the phases, here is the hardware and software blueprint of the isolated SOC environment:
+
+| Component | Role | OS / Platform | Resource Allocation |
+| :--- | :--- | :--- | :--- |
+| **Physical Host** | Hypervisor Node | Proxmox VE 8.x | Multi-core, DDR5 RAM, NVMe |
+| **Wazuh-Manager** | SIEM / Central Analytics | Ubuntu Server 22.04 | 2 vCPU, 4GB RAM, 60GB Disk |
+| **linux-target-01** | Linux Target Host | Ubuntu Server CLI | 2 vCPU, 2GB RAM, 32GB Disk |
+| **windows-dc-01** | Active Directory Domain Controller | Windows Server 2022 | 2 vCPU, 4GB RAM, 50GB Disk |
+
+*(Note: Network boundary enforcement via pfSense VM is currently scheduled for Phase 7.)*
+
 
 ---
 
