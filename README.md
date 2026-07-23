@@ -16,6 +16,36 @@ This repository documents the step-by-step engineering, deployment, and real-tim
 
 ---
 
+## 📑 Table of Contents
+- [Lab Specifications & Topology](#-lab-specifications--topology)
+- [Software & Tooling Versions](#-software--tooling-versions)
+- [Phase 1: Physical Hypervisor Layer](#-phase-1-physical-hypervisor-layer)
+- [Phase 2: Staging the Target Environment](#-phase-2-staging-the-target-environment)
+- [Phase 3: SIEM & Telemetry Deployment](#-phase-3-siem--telemetry-deployment)
+- [Phase 4: Active Threat Simulation & Detection](#-phase-4-active-threat-simulation--detection)
+- [Phase 5: Windows Domain Controller & Active Directory Integration](#-phase-5-windows-domain-controller--active-directory-integration)
+- [Phase 6: Advanced Telemetry Engineering & AD Recon Detection](#-phase-6-advanced-telemetry-engineering--active-directory-recon-detection)
+- [Phase 7: Virtual Network Boundary & Access Control Hardening (pfSense)](#-phase-7-virtual-network-boundary--access-control-hardening-pfsense)
+- [System Baseline & Snapshot Checkpoints](#-system-baseline--snapshot-checkpoints)
+- [Documented Incident Reports](#-documented-incident-reports)
+- [Next Horizons](#-next-horizons)
+
+---
+
+## 📌 Software & Tooling Versions
+To maintain reproducibility and technical rigor, platform components and agent software are pinned to specific versions:
+
+| Software / Platform | Role | Version |
+| :--- | :--- | :--- |
+| **Proxmox VE** | Virtualization Hypervisor | `8.2.x` |
+| **pfSense CE** | Virtual Gateway & Router | `2.7.2` |
+| **Wazuh Manager / Indexer** | SIEM Analytics Engine | `4.8.x` |
+| **Ubuntu Server** | Linux OS Base | `22.04 LTS` |
+| **Windows Server** | Identity Controller OS | `2022 Datacenter/Standard` |
+| **Microsoft Sysmon** | Host Process Telemetry | `v15.x` |
+
+---
+
 ## 📋 Lab Specifications & Topology
 Before diving into the phases, here is the hardware and software blueprint of the isolated SOC environment:
 
@@ -57,6 +87,11 @@ Before diving into the phases, here is the hardware and software blueprint of th
 ### 🧠 Key Engineering Hurdles Overcome:
 * **Elasticsearch/OpenSearch Database Lockdown:** Resolved a critical system failure where disk usage exceeded the flood-stage watermark, forcing the index into read-only mode. 
 * **The Fix:** Expanded the Ubuntu LVM partition from 35GB to the full 60GB allocated in Proxmox, dropped the read-only block using the cluster settings API wrapper (`curl`), and permanently muted future storage noise by modifying `/var/ossec/etc/rules/local_rules.xml` to override Rule 1007 to `level="0"`.
+
+#### ✅ Phase 3 Validation:
+- [x] Wazuh Manager WebUI accessible and reporting healthy cluster status.
+- [x] Linux agent registered and reporting active status (`active` state via `agent_control`).
+- [x] System disk LVM logical volume successfully resized to 60GB without data loss.
 
 ---
 
@@ -118,6 +153,11 @@ Simulated internal account discovery using the `net user /domain` command on the
 * **Expanded Process Tree Details (net1.exe spawn):** ![Wazuh Recon Net Details](./images/wazuh-recon-net-details.png)
 * **MITRE ATT&CK T1087 (Account Discovery) Mapping:** ![Wazuh Recon MITRE Mapping](./images/wazuh-recon-net-mitre.png)
 
+#### ✅ Phase 6 Validation:
+- [x] Sysmon service active on Domain Controller forwarding Event ID 1 process logs.
+- [x] Custom rule `100002` triggering on target binaries (`nslookup.exe`).
+- [x] Base64 PowerShell execution captured and mapped to MITRE ATT&CK framework.
+
 ---
 
 ## 🛡️ Phase 7: Virtual Network Boundary & Access Control Hardening (pfSense)
@@ -135,6 +175,11 @@ To transition the environment into a true isolated enterprise network, pfSense w
 ### 🧠 Key Engineering Hurdles Overcome:
 * **RFC 1918 WAN Private Address Filtering:** Diagnosed packet drops caused by pfSense's default WAN security controls blocking private IP ranges (`192.168.x.x`). Disabled **`Block private networks and loopback addresses`** on the WAN interface to allow transit across the local physical network.
 * **Service Port Collision Avoidance:** Identified and resolved system-level SSH listener port conflicts on pfSense, ensuring external SSH traffic cleanly passes through the firewall engine down to internal Linux targets.
+
+#### ✅ Phase 7 Validation:
+- [x] Dual-interface routing established (WAN transit / LAN `10.0.50.0/24`).
+- [x] Administrative WebGUI blocked on WAN and restricted to local LAN access.
+- [x] NAT Port Forwarding successfully translating WAN Port 22 traffic to `linux-target-01`.
 
 ---
 
