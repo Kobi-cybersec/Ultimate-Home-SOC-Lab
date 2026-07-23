@@ -2,11 +2,13 @@
 
 [![Wazuh](https://img.shields.io/badge/SIEM-Wazuh-blue.svg)](https://wazuh.com/)
 [![Hypervisor](https://img.shields.io/badge/Hypervisor-Proxmox%20VE-orange.svg)](https://www.proxmox.com)
+[![Firewall](https://img.shields.io/badge/Firewall-pfSense-red.svg)](https://www.pfsense.org/)
 [![OS](https://img.shields.io/badge/OS-Ubuntu%20%7C%20Windows%20Server-lightgrey.svg)]()
 
-This repository documents the step-by-step engineering, deployment, and real-time monitoring of an isolated, enterprise-grade Security Operations Center (SOC) lab environment. Built entirely from the ground up on physical hardware, this environment serves as a practical sandbox for host-level telemetry engineering, custom threat detection rule development, Active Directory reconnaissance analysis, and structured incident response.
+This repository documents the step-by-step engineering, deployment, and real-time monitoring of an isolated, enterprise-grade Security Operations Center (SOC) lab environment. Built entirely from the ground up on physical hardware, this environment serves as a practical sandbox for host-level telemetry engineering, custom threat detection rule development, Active Directory reconnaissance analysis, perimeter firewall access control, and structured incident response.
 
 ### 🧠 Key Skills & Technologies Demonstrated:
+* **Perimeter Security & Networking:** pfSense Firewall routing, WAN RFC 1918 filtering, NAT Port Forwarding, zero-trust administrative isolation.
 * **SIEM & Logging:** Wazuh Manager, custom Sysmon XML profiles, Elasticsearch/OpenSearch index management.
 * **Systems & Security Engineering:** Proxmox VE hypervisor management, Linux LVM manipulation, Active Directory Domain Services (AD DS).
 * **Detection Engineering:** Regex-based XML rule development (Sysmon Event ID tracking), PowerShell obfuscation analysis.
@@ -20,12 +22,10 @@ Before diving into the phases, here is the hardware and software blueprint of th
 | Component | Role | OS / Platform | Resource Allocation |
 | :--- | :--- | :--- | :--- |
 | **Physical Host** | Hypervisor Node | Proxmox VE 8.x | Multi-core, DDR5 RAM, NVMe |
+| **pfSense-FW** | Perimeter Firewall / Gateway | pfSense CE | 2 vCPU, 2GB RAM, 20GB Disk |
 | **Wazuh-Manager** | SIEM / Central Analytics | Ubuntu Server 22.04 | 2 vCPU, 4GB RAM, 60GB Disk |
 | **linux-target-01** | Linux Target Host | Ubuntu Server CLI | 2 vCPU, 2GB RAM, 32GB Disk |
 | **windows-dc-01** | Active Directory Domain Controller | Windows Server 2022 | 2 vCPU, 4GB RAM, 50GB Disk |
-
-*(Note: Network boundary enforcement via pfSense VM is currently scheduled for Phase 7.)*
-
 
 ---
 
@@ -120,6 +120,35 @@ Simulated internal account discovery using the `net user /domain` command on the
 
 ---
 
+## 🛡️ Phase 7: Virtual Network Boundary & Access Control Hardening (pfSense)
+To transition the environment into a true isolated enterprise network, pfSense was deployed as the primary virtual boundary gateway controlling all ingress/egress transit.
+
+* **Asset Name:** `pfSense-FW`
+* **Operating System:** pfSense CE (FreeBSD)
+* **Resource Mapping:** 2 vCPU cores, 2GB RAM, 20GB NVMe Virtual Disk.
+* **Network Segmentation:** Configured dual-interface routing separating WAN transit from the internal isolated `10.0.50.0/24` lab network.
+
+### ⚙️ Access Policy & NAT Control Topology:
+* **Zero-Trust Administrative Management:** Restricted pfSense WebGUI access (`10.0.50.1`) strictly to internal LAN instances (accessed via the Windows VM jump box or Proxmox hypervisor console), preventing WAN management exposure.
+* **Ingress NAT Port Forwarding:** Configured Port Forwarding on the WAN interface (TCP Port 22) to translate external management traffic directly to `linux-target-01` (`10.0.50.100`), enforcing boundary translation.
+
+### 🧠 Key Engineering Hurdles Overcome:
+* **RFC 1918 WAN Private Address Filtering:** Diagnosed packet drops caused by pfSense's default WAN security controls blocking private IP ranges (`192.168.x.x`). Disabled **`Block private networks and loopback addresses`** on the WAN interface to allow transit across the local physical network.
+* **Service Port Collision Avoidance:** Identified and resolved system-level SSH listener port conflicts on pfSense, ensuring external SSH traffic cleanly passes through the firewall engine down to internal Linux targets.
+
+---
+
+## 📸 System Baseline & Snapshot Checkpoints
+To establish a stable rollback foundation before initiating future firewall log forwarding and advanced attack scenarios, hypervisor-level snapshots were generated across all active nodes:
+
+| Node | Snapshot Identifier | State Captured & Verified |
+| :--- | :--- | :--- |
+| **pfSense-FW** | `Baseline_WAN_NAT_Rules` | WAN unblock rules applied, Inbound SSH Port Forwarding verified, internal WebGUI secured. |
+| **linux-target-01** | `Baseline_Netplan_SSH_Fixed` | Static IP (`10.0.50.100`), default route set via pfSense gateway (`10.0.50.1`), Wazuh Agent running. |
+| **windows-dc-01** | `Baseline_Clean_State` | AD DS functional, Sysmon process telemetry streaming, RDP access active. |
+
+---
+
 ## 📁 Documented Incident Reports
 To match enterprise compliance standards, all verified threat simulations are operationalized into formal security documentation:
 *   [INC-2026-0703: SSH Brute-Force Attack (Hydra Detection vs. Wazuh SIEM)](./reports/INC-2026-0703-Hydra-SSH.md) — *Status: Closed/Mitigated*
@@ -130,5 +159,6 @@ To match enterprise compliance standards, all verified threat simulations are op
 * [x] Build out automated documentation templates for standardized incident response reports.
 * [x] Expand the architecture to include a Windows Server VM.
 * [x] Provision Active Directory (AD) to simulate enterprise identity management and monitor domain-level threat vectors.
-* [ ] Integrate pfSense as a virtual network-level boundary security device.
-* [ ] Deploy a central Syslog collector to aggregate network-level firewall logs into the Wazuh SIEM.
+* [x] Integrate pfSense as a virtual network-level boundary security device.
+* [ ] Configure pfSense Syslog logging to ship perimeter firewall events directly into the Wazuh SIEM.
+* [ ] Conduct multi-stage attack simulations across network boundaries and Active Directory assets.
